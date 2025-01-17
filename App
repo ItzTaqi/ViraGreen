@@ -1,40 +1,127 @@
-func loginUser(username: String, password: String, completion: @escaping (Bool, String?) -> Void) {
-    // Simulate a network login request
-    DispatchQueue.global().async {
-        // Simulate a successful login
-        let success = true // This would be the result of your login logic
-        let message: String? = success ? nil : "Login failed"
-        
-        // Call the completion handler on the main thread
-        DispatchQueue.main.async {
-            completion(success, message)
+import SwiftUI
+
+struct ContentView: View {
+    var body: some View {
+        TabView {
+            LoginView()
+                .tabItem {
+                    Label("Login", systemImage: "person.fill")
+                }
+            SignupView()
+                .tabItem {
+                    Label("Signup", systemImage: "person.badge.plus")
+                }
         }
     }
 }
 
-// Example usage in a SwiftUI view
 struct LoginView: View {
-    @State private var username: String = ""
+    @State private var email: String = ""
     @State private var password: String = ""
-    @State private var loginMessage: String?
 
     var body: some View {
-        VStack {
-            TextField("Username", text: $username)
-            SecureField("Password", text: $password)
-            Button("Login") {
-                loginUser(username: username, password: password) { success, message in
-                    if success {
-                        loginMessage = "Login successful!"
-                    } else {
-                        loginMessage = message
-                    }
+        ZStack {
+            Image("background")
+                .resizable()
+                .scaledToFill()
+                .edgesIgnoringSafeArea(.all)
+            VStack {
+                Text("Login")
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+                    .padding()
+                TextField("Email", text: $email)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .padding()
+                SecureField("Password", text: $password)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .padding()
+                Button(action: {
+                    // Handle login action
+                }) {
+                    Text("Login")
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
                 }
+                .padding()
             }
-            if let message = loginMessage {
-                Text(message)
+            .padding()
+        }
+    }
+}
+
+struct SignupView: View {
+    @State private var fullName: String = ""
+    @State private var email: String = ""
+    @State private var address: String = ""
+    @State private var zipCode: String = ""
+    @State private var password: String = ""
+    @State private var confirmPassword: String = ""
+
+    var body: some View {
+        ZStack {
+            Image("background")
+                .resizable()
+                .scaledToFill()
+                .edgesIgnoringSafeArea(.all)
+            ScrollView {
+                VStack {
+                    Text("Signup")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .padding()
+                    
+                    TextField("Full Name", text: $fullName)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .padding()
+                    
+                    TextField("Email", text: $email)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .padding()
+                    
+                    TextField("Address", text: $address)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .padding()
+                    
+                    TextField("Zip Code", text: $zipCode)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .padding()
+                        .keyboardType(.numberPad)
+                    
+                    SecureField("Password", text: $password)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .padding()
+                    
+                    SecureField("Confirm Password", text: $confirmPassword)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .padding()
+                    
+                    Button(action: {
+                        // Handle signup action
+                    }) {
+                        Text("Signup")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.green)
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                    }
+                    .padding()
+                }
+                .padding()
             }
         }
-        .padding()
+    }
+}
+
+
+struct ViragreenApp: App {
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
     }
 }
