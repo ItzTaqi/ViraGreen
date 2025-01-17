@@ -1,0 +1,40 @@
+func loginUser(username: String, password: String, completion: @escaping (Bool, String?) -> Void) {
+    // Simulate a network login request
+    DispatchQueue.global().async {
+        // Simulate a successful login
+        let success = true // This would be the result of your login logic
+        let message: String? = success ? nil : "Login failed"
+        
+        // Call the completion handler on the main thread
+        DispatchQueue.main.async {
+            completion(success, message)
+        }
+    }
+}
+
+// Example usage in a SwiftUI view
+struct LoginView: View {
+    @State private var username: String = ""
+    @State private var password: String = ""
+    @State private var loginMessage: String?
+
+    var body: some View {
+        VStack {
+            TextField("Username", text: $username)
+            SecureField("Password", text: $password)
+            Button("Login") {
+                loginUser(username: username, password: password) { success, message in
+                    if success {
+                        loginMessage = "Login successful!"
+                    } else {
+                        loginMessage = message
+                    }
+                }
+            }
+            if let message = loginMessage {
+                Text(message)
+            }
+        }
+        .padding()
+    }
+}
