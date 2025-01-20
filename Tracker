@@ -1,21 +1,26 @@
-
-//  ContentView.swift
-//  ViraGreen
-//
-//  Created by Taqi Hussain on 1/15/25.
-//
-
-
 import SwiftUI
 
 struct ContentView: View {
-    // UI Elements
+    // State Properties
     @State private var activity: String = "Driving"
-    @State private var distance: String = "10"
-    @State private var emissionsText: String = "Total CO2 Emissions: 0 kg"
-    @State private var co2Emissions: Double = 0.0
+    @State private var distance: String = ""
     @State private var showTips = false
     @State private var emissionsLog: [String] = []
+    
+    // Computed Properties
+    private var co2Emissions: Double? {
+        guard let distanceValue = Double(distance),
+              let emissionFactor = emissionFactors[activity] else { return nil }
+        return distanceValue * emissionFactor
+    }
+    
+    private var emissionsText: String {
+        if let emissions = co2Emissions {
+            return String(format: "Total CO2 Emissions: %.2f kg", emissions)
+        } else {
+            return "Invalid input. Please enter a valid distance."
+        }
+    }
     
     // Emission factors (in kg CO2 per activity)
     let emissionFactors: [String: Double] = [
@@ -25,93 +30,96 @@ struct ContentView: View {
         "Walking": 0.0    // kg CO2 per mile
     ]
     
+    let tips: [String: String] = [
+        "Driving": "1. Carpool with others.\n2. Maintain your vehicle for better fuel efficiency.",
+        "Flying": "1. Consider direct flights.\n2. Use alternative transport for short distances.",
+        "Biking": "1. Use biking for short trips.\n2. Encourage others to bike.",
+        "Walking": "1. Walk for errands instead of driving.\n2. Promote walking in your community."
+    ]
+    
     let activities = ["Driving", "Flying", "Biking", "Walking"]
+    
     var body: some View {
-        VStack {
-            Picker("Select activity", selection: $activity) {
-                ForEach(activities, id: \.self) { activity in
-                    Text(activity).tag(activity)
+        ScrollView {
+            VStack {
+                // Activity Picker
+                Picker("Select activity", selection: $activity) {
+                    ForEach(activities, id: \.self) { activity in
+                        Text(activity).tag(activity)
+                    }
+                }
+                .pickerStyle(SegmentedPickerStyle())
+                .padding()
+                
+                // Distance Input
+                TextField("Enter distance (miles)", text: $distance)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .padding()
+                    .keyboardType(.decimalPad)
+                    .onChange(of: distance) { _ in
+                        // Optional: Add validation feedback for live input changes
+                    }
+                
+                // Calculate Button
+                Button(action: calculateEmissions) {
+                    Text("Calculate Emissions")
+                        .padding()
+                        .background(isInputValid ? Color.accentColor : Color.gray)
+                        .foregroundColor(.white)
+                        .cornerRadius(5)
+                }
+                .disabled(!isInputValid)
+                
+                // Emissions Result
+                Text(emissionsText)
+                    .padding()
+                    .foregroundColor(isInputValid ? .primary : .red)
+                    .font(.headline)
+                
+                // Tips Button
+                Button(action: {
+                    showTips.toggle()
+                }) {
+                    Text("How to Spend Less Emissions")
+                        .font(.headline)
+                        .padding()
+                        .background(Color.accentColor)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                }
+                .alert(isPresented: $showTips) {
+                    Alert(title: Text("Tips to Reduce CO2 Emissions"),
+                          message: Text(tips[activity] ?? "No tips available."),
+                          dismissButton: .default(Text("Got it!")))
+                }
+                
+                // Emissions Log
+                if !emissionsLog.isEmpty {
+                    Text("Emissions Log")
+                        .font(.title2)
+                        .padding(.top)
+                    List(emissionsLog, id: \.self) { log in
+                        Text(log)
+                    }
+                    .frame(height: 200) // Adjust height for better UI
                 }
             }
-            .pickerStyle(SegmentedPickerStyle())
             .padding()
-            
-            TextField("Enter distance (miles)", text: $distance)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .padding()
-                .keyboardType(.decimalPad)
-            
-            Button(action: calculateEmissions) {
-                Text("Calculate Emissions")
-                    .padding()
-                    .background(Color.blue)
-                    .foregroundColor(.white)
-                    .cornerRadius(5)
-            }
-            
-            Text(emissionsText)
-                .padding()
-            
-            Text("CO2 Emissions: \(co2Emissions, specifier: "%.2f") kg")
-                .font(.largeTitle)
-                .padding()
-            
-            Button(action: {
-                showTips.toggle()
-            }) {
-                Text("How to Spend Less Emissions")
-                    .font(.headline)
-                    .padding()
-                    .background(Color.blue)
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
-            }
-            .alert(isPresented: $showTips) {
-                Alert(title: Text("Tips to Reduce CO2 Emissions"),
-                      message: Text(generateTips()),
-                      dismissButton: .default(Text("Got it!")))
-            }
-            
-            List(emissionsLog, id: \.self) { log in
-                Text(log)
-            }
         }
-        .padding()
+    }
+    
+    private var isInputValid: Bool {
+        Double(distance) != nil
     }
     
     func calculateEmissions() {
-        guard let emissionFactor = emissionFactors[activity],
-              let distanceValue = Double(distance) else {
-            emissionsText = "Invalid input. Please try again."
-            return
-        }
-        
-        let totalEmissions = emissionFactor * distanceValue
-        
-        emissionsText = String(format: "Total CO2 Emissions: %.2f kg", totalEmissions)
-        co2Emissions = totalEmissions // Update co2Emissions for display
-        emissionsLog.append("\(activity) for \(distanceValue) miles: \(totalEmissions) kg CO2")
-    }
-    
-    func generateTips() -> String {
-        switch activity {
-        case "Driving":
-            return "1. Carpool with others.\n2. Maintain your vehicle for better fuel efficiency."
-        case "Flying":
-            return "1. Consider direct flights.\n2. Use alternative transport for short distances."
-        case "Biking":
-            return "1. Use biking for short trips.\n2. Encourage others to bike."
-        case "Walking":
-            return "1. Walk for errands instead of driving.\n2. Promote walking in your community."
-        default:
-            return "No tips available."
-        }
+        guard let emissions = co2Emissions else { return }
+        emissionsLog.append("\(activity) for \(distance) miles: \(emissions, specifier: "%.2f") kg CO2")
     }
 }
 
-
 @main
-struct MyApp: App {
+struct ViraGreenApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
