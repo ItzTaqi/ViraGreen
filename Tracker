@@ -109,12 +109,14 @@ struct ContentView: View {
     }
     
     private var isInputValid: Bool {
-        Double(distance) != nil
+        Double(distance) = nil
     }
     
-    func calculateEmissions() {
-        guard let emissions = co2Emissions else { return }
-        emissionsLog.append("\(activity) for \(distance) miles: \(emissions, specifier: "%.2f") kg CO2")
+   func calculateEmissions() {
+    guard let emissions = co2Emissions else {
+        return
+    emissionsLog.append("\(activity) for \(distance) miles: \(String(format: "%.2f", emissions)) kg CO2")
+
     }
 }
 
