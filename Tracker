@@ -113,8 +113,34 @@ struct ContentView: View {
     }
     
     func calculateEmissions() {
-        guard let emissions = co2Emissions else { return }
+        guard let emissions = co2Emissions else return () 
         emissionsLog.append("\(activity) for \(distance) miles: \(emissions, specifier: "%.2f") kg CO2")
+    }
+}  
+
+  func scheduleNotification() {
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
+            if granted {
+                let content = UNMutableNotificationContent()
+                content.title = "Reminder"
+                content.body = "Don't forget to input your CO2 emissions for today!"
+                content.sound = UNNotificationSound.default
+
+                var dateComponents = DateComponents()
+                dateComponents.hour = 17 // 5 PM
+                dateComponents.minute = 0
+
+                let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
+                let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
+
+                center.add(request) { error in
+                    if let error = error {
+                        print("Error adding notification: \(error.localizedDescription)")
+                    }
+                }
+            }
+        }
     }
 }
 
