@@ -1,31 +1,22 @@
-
-//  ContentView.swift
-//  ViraGreen
-//
-//  Created by Taqi Hussain on 1/15/25.
-//
-
-
 import SwiftUI
 
 struct ContentView: View {
-    // UI Elements
     @State private var activity: String = "Driving"
     @State private var distance: String = "10"
     @State private var emissionsText: String = "Total CO2 Emissions: 0 kg"
     @State private var co2Emissions: Double = 0.0
     @State private var showTips = false
-    @State private var emissionsLog: [String] = []
-    
-    // Emission factors (in kg CO2 per activity)
+    @State private var emissionsLog: [String] = UserDefaults.standard.stringArray(forKey: "EmissionsLog") ?? []
+
     let emissionFactors: [String: Double] = [
-        "Driving": 0.404, // kg CO2 per mile
-        "Flying": 0.257, // kg CO2 per mile
-        "Biking": 0.0,    // kg CO2 per mile
-        "Walking": 0.0    // kg CO2 per mile
+        "Driving": 0.404,
+        "Flying": 0.257,
+        "Biking": 0.0,
+        "Walking": 0.0
     ]
-    
+
     let activities = ["Driving", "Flying", "Biking", "Walking"]
+
     var body: some View {
         VStack {
             Picker("Select activity", selection: $activity) {
@@ -35,12 +26,12 @@ struct ContentView: View {
             }
             .pickerStyle(SegmentedPickerStyle())
             .padding()
-            
+
             TextField("Enter distance (miles)", text: $distance)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding()
                 .keyboardType(.decimalPad)
-            
+
             Button(action: calculateEmissions) {
                 Text("Calculate Emissions")
                     .padding()
@@ -48,14 +39,14 @@ struct ContentView: View {
                     .foregroundColor(.white)
                     .cornerRadius(5)
             }
-            
+
             Text(emissionsText)
                 .padding()
-            
+
             Text("CO2 Emissions: \(co2Emissions, specifier: "%.2f") kg")
                 .font(.largeTitle)
                 .padding()
-            
+
             Button(action: {
                 showTips.toggle()
             }) {
@@ -71,28 +62,42 @@ struct ContentView: View {
                       message: Text(generateTips()),
                       dismissButton: .default(Text("Got it!")))
             }
-            
-            List(emissionsLog, id: \.self) { log in
-                Text(log)
+
+            List {
+                ForEach(emissionsLog, id: \.self) { log in
+                    Text(log)
+                }
+                .onDelete(perform: deleteLog)
             }
         }
         .padding()
     }
-    
+
     func calculateEmissions() {
         guard let emissionFactor = emissionFactors[activity],
               let distanceValue = Double(distance) else {
             emissionsText = "Invalid input. Please try again."
             return
         }
-        
+
         let totalEmissions = emissionFactor * distanceValue
-        
         emissionsText = String(format: "Total CO2 Emissions: %.2f kg", totalEmissions)
-        co2Emissions = totalEmissions // Update co2Emissions for display
-        emissionsLog.append("\(activity) for \(distanceValue) miles: \(totalEmissions) kg CO2")
+        co2Emissions = totalEmissions
+
+        let logEntry = "\(activity) for \(distanceValue) miles: \(totalEmissions) kg CO2"
+        emissionsLog.append(logEntry)
+        saveEmissionsLog()
     }
-    
+
+    func saveEmissionsLog() {
+        UserDefaults.standard.set(emissionsLog, forKey: "EmissionsLog")
+    }
+
+    func deleteLog(at offsets: IndexSet) {
+        emissionsLog.remove(atOffsets: offsets)
+        saveEmissionsLog()
+    }
+
     func generateTips() -> String {
         switch activity {
         case "Driving":
@@ -108,7 +113,6 @@ struct ContentView: View {
         }
     }
 }
-
 
 @main
 struct MyApp: App {
